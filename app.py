@@ -83,14 +83,20 @@ CFG = yaml.safe_load(Path("config/countries.yaml").read_text(encoding="utf-8"))
 DB_PATH = CFG["db_path"]
 
 
-@st.cache_resource
-def get_con() -> duckdb.DuckDBPyConnection:
-    return duckdb.connect(DB_PATH, read_only=False)
-
-
 @st.cache_data(ttl=60)
 def q(sql: str, params: list | None = None) -> pd.DataFrame:
-    return get_con().execute(sql, params or []).df()
+    """Run a read only query. Short lived connections keep the DuckDB
+    file lock free so several viewers or tools can attach at once."""
+    with duckdb.connect(DB_PATH, read_only=True) as con:
+        return con.execute(sql, params or []).df()
+
+
+def mark_reviewed(record_id: str) -> None:
+    """Persist an analyst decision with a short lived write connection."""
+    with duckdb.connect(DB_PATH) as con:
+        con.execute(
+            "UPDATE classifications SET review_status='reviewed' WHERE record_id=?",
+            [record_id])
 
 
 def kpi(label: str, value, note: str = "") -> None:
@@ -335,8 +341,7 @@ with tab_review:
         format_func=lambda rid: f"{queue.loc[queue['record_id'] == rid, 'country_code'].iloc[0]}  "
                                 f"{queue.loc[queue['record_id'] == rid, 'source_transaction_id'].iloc[0]}")
     if sel and st.button("Mark as reviewed", type="primary"):
-        get_con().execute(
-            "UPDATE classifications SET review_status='reviewed' WHERE record_id=?", [sel])
+        mark_reviewed(sel)
         st.cache_data.clear()
         st.success("Record marked as reviewed.")
         st.rerun()
@@ -428,7 +433,6 @@ with tab_detail:
 st.markdown(f"""
 <div class="who-footer">
     <strong>Health Expenditure Harmonisation Prototype</strong> · built for a technical
-    assessment · all data is synthetic · styling follows WHO visual identity
-    (blue {WHO_BLUE}, navy {WHO_NAVY})
+    assessment · all data is synthetic
 </div>
 """, unsafe_allow_html=True)
