@@ -21,20 +21,17 @@ flowchart LR
     CL -.-> RQ[Review Queue]
 ```
 
-- `src/ingest.py`: one adapter per country; emits `RawRecord`s with
-  source lineage (file, row or JSON path, source id) and parse level
-  data quality issues.
-- `src/harmonize.py`: canonical schema; record ids and content hashes;
-  child splits flagged `include_in_totals=false` to avoid double counting.
-- `src/quality.py`: duplicate ids, adversarial free text, description to
-  CoA label mismatch, orphaned children.
-- `src/classify.py`: deterministic cascade. Exact CoA map first, then
-  sanitised keyword rules, then the review queue. SHA and SRHR resolved
-  independently.
+- `src/ingest.py`: per country adapters emitting records with full source
+  lineage and parse level data quality issues.
+- `src/harmonize.py`: canonical schema, record ids, content hashes; child
+  splits excluded from totals to avoid double counting.
+- `src/quality.py`: duplicate ids, adversarial text, label mismatch, orphans.
+- `src/classify.py`: deterministic cascade: CoA map, sanitised keywords,
+  review queue. SHA and SRHR resolved independently.
 - `src/database.py`: DuckDB schema (transactions, classifications,
   dq_issues, ref tables, batches and files).
-- `config/*.yaml`: adapter layout, CoA to SHA/SRHR maps, keyword rules.
-  All mapping logic lives outside the code so country teams can edit it.
+- `config/*.yaml`: all mapping logic lives outside the code so country
+  teams can edit it.
 
 ## Setup and run
 
