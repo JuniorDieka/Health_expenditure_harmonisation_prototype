@@ -1,5 +1,14 @@
 # Health Expenditure Harmonisation Prototype
 
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
+![pandas](https://img.shields.io/badge/pandas-ingestion-150458?logo=pandas&logoColor=white)
+![openpyxl](https://img.shields.io/badge/openpyxl-Excel%20adapter-217346)
+![DuckDB](https://img.shields.io/badge/DuckDB-storage-FFF000?logo=duckdb&logoColor=black)
+![Streamlit](https://img.shields.io/badge/Streamlit-analyst%20UI-FF4B4B?logo=streamlit&logoColor=white)
+![PyYAML](https://img.shields.io/badge/config-YAML-CB171E?logo=yaml&logoColor=white)
+![pytest](https://img.shields.io/badge/tests-16%20passed-0A9EDC?logo=pytest&logoColor=white)
+
 Ingests three heterogeneous country expenditure extracts (CSV, Excel,
 JSON) into one auditable DuckDB model, classifies each record against
 SHA and SRHR reference codes, surfaces data quality issues, and gives
