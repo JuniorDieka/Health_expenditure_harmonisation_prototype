@@ -88,11 +88,11 @@ def test_country_c_children_lineage_and_no_double_count():
     children = tx[tx["record_role"] == "child"]
     assert len(children) == 183
     assert children["parent_transaction_id"].notna().all()
-    # children never count toward totals -> parent splits cannot double count
+    # children never count toward totals, so parent splits cannot double count
     assert not children["include_in_totals"].any()
     parents = tx[tx["record_role"] == "parent"]
     assert parents["include_in_totals"].all()
-    # 17 groups mis-reconcile by a cent -> flagged, none silently fixed
+    # 17 groups mis-reconcile by a cent are flagged, none silently fixed
     mism = [i for i in res.issues if i.issue_type == "child_sum_mismatch"]
     assert len(mism) == 17
 
@@ -158,7 +158,7 @@ def test_country_a_anomalies_preserved():
     # 31 missing amounts kept as nulls, 54 negatives kept negative
     assert tx["amount"].isna().sum() == 31
     assert (tx["amount"] < 0).sum() == 54
-    # duplicate source id KE-2401203 -> two distinct records, both flagged
+    # duplicate source id KE-2401203 becomes two distinct records, both flagged
     dups = tx[tx["source_transaction_id"] == "KE-2401203"]
     assert len(dups) == 2
     issues = check_dataset(tx)

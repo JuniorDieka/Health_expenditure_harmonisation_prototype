@@ -79,7 +79,7 @@ def _modal_label(counts: Dict[str, int]) -> str:
 
 
 # --------------------------------------------------------------------------
-# Country A — CSV
+# Country A: CSV
 # --------------------------------------------------------------------------
 
 def ingest_country_a(path: Path, cfg: dict) -> IngestResult:
@@ -153,7 +153,7 @@ def ingest_country_a(path: Path, cfg: dict) -> IngestResult:
 
 
 # --------------------------------------------------------------------------
-# Country B — Excel (report layout with metadata header + TOTAL footer)
+# Country B: Excel (report layout with metadata header + TOTAL footer)
 # --------------------------------------------------------------------------
 
 def ingest_country_b(path: Path, cfg: dict) -> IngestResult:
@@ -269,7 +269,7 @@ def ingest_country_b(path: Path, cfg: dict) -> IngestResult:
 
 
 # --------------------------------------------------------------------------
-# Country C — JSON (nested sub-transactions, multi-currency)
+# Country C: JSON (nested sub-transactions, multi-currency)
 # --------------------------------------------------------------------------
 
 def ingest_country_c(path: Path, cfg: dict) -> IngestResult:

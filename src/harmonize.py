@@ -1,8 +1,8 @@
-"""Harmonisation: RawRecord -> canonical expenditure model.
+"""Harmonisation: RawRecord to the canonical expenditure model.
 
 Assigns stable surrogate ids, sanitises free text for downstream matching,
 computes record hashes, and decides whether a record counts toward
-expenditure totals (parents/standalone yes; children no — they are splits
+expenditure totals (parents/standalone yes; children no; they are splits
 of their parent, so counting both would double count).
 """
 
@@ -30,7 +30,7 @@ def _record_id(country_code: str, source_file: str, loc: str, txn_id: str | None
     """Deterministic surrogate key from source lineage.
 
     Lineage (not the source transaction id) is used because source ids can
-    collide — e.g. Country A's duplicated KE-2401203.
+    collide, e.g. Country A's duplicated KE-2401203.
     """
     digest = hashlib.sha1(
         f"{country_code}|{source_file}|{loc}|{txn_id or ''}".encode("utf-8")
@@ -39,7 +39,7 @@ def _record_id(country_code: str, source_file: str, loc: str, txn_id: str | None
 
 
 def _record_hash(rec: RawRecord) -> str:
-    """Content hash over canonical values — change/evidence detection."""
+    """Content hash over canonical values for change/evidence detection."""
     parts = [
         rec.country_code, str(rec.transaction_date), str(rec.ministry_code),
         str(rec.account_code), str(rec.amount), str(rec.currency),

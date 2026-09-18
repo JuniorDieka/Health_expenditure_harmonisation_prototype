@@ -1,9 +1,9 @@
-"""SHA / SRHR classification — deterministic, explainable cascade.
+"""SHA / SRHR classification: deterministic, explainable cascade.
 
 Order of precedence per axis (SHA and SRHR are resolved independently):
-  1. coa_maps  — exact chart-of-accounts mapping for the country (authoritative)
-  2. keyword_rules — configurable substring rules on the *sanitised* description
-  3. unresolved — axis left unclassified; record routed to the review queue
+  1. coa_maps: exact chart-of-accounts mapping for the country (authoritative)
+  2. keyword_rules: configurable substring rules on the *sanitised* description
+  3. unresolved: axis left unclassified; record routed to the review queue
 
 Free text is untrusted data: keyword rules only ever see the sanitised
 description, and CoA/reference rules always outrank text. No code is ever

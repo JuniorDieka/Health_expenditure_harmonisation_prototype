@@ -1,4 +1,4 @@
-"""Pipeline orchestrator — rebuild the harmonised database from raw files.
+"""Pipeline orchestrator: rebuild the harmonised database from raw files.
 
 Usage:
     python -m src.pipeline            # full rebuild
@@ -58,7 +58,7 @@ def run(config_path: Path = Path("config/countries.yaml"),
             "rows_read": res.rows_read, "rows_loaded": len(res.records),
             "file_checks": json.dumps(res.file_checks),
         })
-        print(f"[{country_code}] {res.file_name}: {res.rows_read} rows -> "
+        print(f"[{country_code}] {res.file_name}: {res.rows_read} source rows, "
               f"{len(res.records)} records, {len(res.issues)} ingest issues")
 
     tx = harmonize_mod.harmonize(all_records, batch_id)

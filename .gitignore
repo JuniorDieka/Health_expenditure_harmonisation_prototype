@@ -4,4 +4,3 @@ __pycache__/
 output/
 *.duckdb
 *.duckdb.wal
-.streamlit/

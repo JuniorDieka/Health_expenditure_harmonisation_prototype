@@ -1,11 +1,11 @@
-# Classification rules — versioned, editable by country teams / analysts.
+# Classification rules: versioned, editable by country teams / analysts.
 #
 # Cascade (deterministic, explainable):
 #   1. coa_maps: exact chart-of-accounts lookup per country (highest confidence).
-#      sha: null means "no defensible SHA mapping in the simplified reference" —
+#      sha: null means "no defensible SHA mapping in the simplified reference";
 #      the axis falls through to keyword rules, then to the review queue.
 #   2. keyword_rules: substring patterns applied to the *sanitised* description.
-#   3. Anything unresolved -> review queue. A code is never forced.
+#   3. Anything unresolved goes to the review queue. A code is never forced.
 #
 # Source text is untrusted: descriptions are sanitised before keyword matching
 # and CoA/reference rules always outrank free text.
@@ -14,62 +14,62 @@ rule_version: "1.0"
 
 coa_maps:
   CTA:
-    "2110101": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Personnel emoluments -> governance/admin"}
-    "2210201": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Operating supplies -> governance/admin"}
-    "2210301": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Travel -> governance/admin"}
-    "2211101": {sha: HC.5.1, srhr: SRHR.NA,   rationale: "Medical drugs -> pharmaceuticals"}
+    "2110101": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Personnel emoluments: governance/admin"}
+    "2210201": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Operating supplies: governance/admin"}
+    "2210301": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Travel: governance/admin"}
+    "2211101": {sha: HC.5.1, srhr: SRHR.NA,   rationale: "Medical drugs: pharmaceuticals"}
     "2211102": {sha: HC.5.1, srhr: SRHR.FP,   rationale: "Contraceptives/FP commodities"}
-    "2211103": {sha: HC.6.2, srhr: SRHR.NA,   rationale: "Vaccines -> immunisation programmes"}
+    "2211103": {sha: HC.6.2, srhr: SRHR.NA,   rationale: "Vaccines: immunisation programmes"}
     "2211105": {sha: HC.5.1, srhr: SRHR.HIV,  rationale: "HIV test kits and ARVs"}
     "2211110": {sha: HC.5.1, srhr: SRHR.MH,   rationale: "Maternity/delivery supplies"}
     "2211199": {sha: HC.5.1, srhr: SRHR.NA,   rationale: "General medical consumables"}
-    "2211201": {sha: HC.4,   srhr: SRHR.NA,   rationale: "Lab reagents -> ancillary diagnostic services"}
+    "2211201": {sha: HC.4,   srhr: SRHR.NA,   rationale: "Lab reagents: ancillary diagnostic services"}
     "2211305": {sha: HC.6.2, srhr: SRHR.NA,   rationale: "Immunisation outreach"}
-    "2211306": {sha: HC.6.4, srhr: SRHR.MH,   rationale: "Antenatal outreach -> condition monitoring, maternal"}
-    "2211308": {sha: HC.6.1, srhr: SRHR.AH,   rationale: "Youth SRH counselling -> IEC programmes, adolescent"}
-    "2211320": {sha: HC.6.3, srhr: SRHR.RC,   rationale: "Cervical cancer screening -> early detection, repro. cancers"}
-    "2211404": {sha: HC.1.3, srhr: SRHR.SGBV, rationale: "SGBV survivor services -> outpatient care, SGBV response"}
-    "2211407": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Facility operations -> governance/admin"}
-    "2211501": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Fuels -> governance/admin"}
-    "2211511": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Printing/stationery -> governance/admin"}
+    "2211306": {sha: HC.6.4, srhr: SRHR.MH,   rationale: "Antenatal outreach: condition monitoring, maternal"}
+    "2211308": {sha: HC.6.1, srhr: SRHR.AH,   rationale: "Youth SRH counselling: IEC programmes, adolescent"}
+    "2211320": {sha: HC.6.3, srhr: SRHR.RC,   rationale: "Cervical cancer screening: early detection, repro. cancers"}
+    "2211404": {sha: HC.1.3, srhr: SRHR.SGBV, rationale: "SGBV survivor services: outpatient care, SGBV response"}
+    "2211407": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Facility operations: governance/admin"}
+    "2211501": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Fuels: governance/admin"}
+    "2211511": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Printing/stationery: governance/admin"}
     "3110101": {sha: null,   srhr: SRHR.NA,   rationale: "Capital formation; no HC capital code in simplified reference"}
     "3110701": {sha: null,   srhr: SRHR.NA,   rationale: "Ambulance purchase is capital formation; no HC capital code"}
 
   CTB:
-    "610100": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Salaires -> governance/admin"}
-    "610200": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Frais de fonctionnement -> governance/admin"}
-    "611010": {sha: HC.5.1, srhr: SRHR.NA,   rationale: "Medicaments essentiels -> pharmaceuticals"}
+    "610100": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Salaires: governance/admin"}
+    "610200": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Frais de fonctionnement: governance/admin"}
+    "611010": {sha: HC.5.1, srhr: SRHR.NA,   rationale: "Medicaments essentiels: pharmaceuticals"}
     "611015": {sha: HC.5.1, srhr: SRHR.FP,   rationale: "Contraceptifs / planification familiale"}
-    "611020": {sha: HC.6.2, srhr: SRHR.NA,   rationale: "Vaccins -> immunisation programmes"}
+    "611020": {sha: HC.6.2, srhr: SRHR.NA,   rationale: "Vaccins: immunisation programmes"}
     "611025": {sha: HC.5.1, srhr: SRHR.HIV,  rationale: "Tests VIH et antiretroviraux"}
-    "611030": {sha: HC.5.1, srhr: SRHR.MH,   rationale: "Kits obstetricaux -> maternal health"}
-    "611040": {sha: HC.4,   srhr: SRHR.NA,   rationale: "Reactifs de laboratoire -> ancillary diagnostic"}
-    "612010": {sha: HC.6.1, srhr: SRHR.MH,   rationale: "Sensibilisation sante maternelle -> IEC, maternal"}
-    "612015": {sha: HC.6.1, srhr: SRHR.HIV,  rationale: "Sensibilisation VIH/SIDA -> IEC, HIV"}
-    "612020": {sha: HC.6.3, srhr: SRHR.RC,   rationale: "Depistage cancer du col -> early detection, repro. cancers"}
-    "612025": {sha: HC.6.1, srhr: SRHR.AH,   rationale: "Conseil SRH adolescents -> IEC, adolescent"}
-    "612030": {sha: HC.1.3, srhr: SRHR.SGBV, rationale: "Appui victimes VBG -> outpatient care, SGBV response"}
-    "613010": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Nettoyage/hygiene -> facility operations"}
-    "613020": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Carburants -> governance/admin"}
-    "613030": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Imprimerie -> governance/admin"}
+    "611030": {sha: HC.5.1, srhr: SRHR.MH,   rationale: "Kits obstetricaux: maternal health"}
+    "611040": {sha: HC.4,   srhr: SRHR.NA,   rationale: "Reactifs de laboratoire: ancillary diagnostic"}
+    "612010": {sha: HC.6.1, srhr: SRHR.MH,   rationale: "Sensibilisation sante maternelle: IEC, maternal"}
+    "612015": {sha: HC.6.1, srhr: SRHR.HIV,  rationale: "Sensibilisation VIH/SIDA: IEC, HIV"}
+    "612020": {sha: HC.6.3, srhr: SRHR.RC,   rationale: "Depistage cancer du col: early detection, repro. cancers"}
+    "612025": {sha: HC.6.1, srhr: SRHR.AH,   rationale: "Conseil SRH adolescents: IEC, adolescent"}
+    "612030": {sha: HC.1.3, srhr: SRHR.SGBV, rationale: "Appui victimes VBG: outpatient care, SGBV response"}
+    "613010": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Nettoyage/hygiene: facility operations"}
+    "613020": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Carburants: governance/admin"}
+    "613030": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Imprimerie: governance/admin"}
     "614010": {sha: null,   srhr: SRHR.NA,   rationale: "Capital formation; no HC capital code in simplified reference"}
     "614020": {sha: null,   srhr: SRHR.NA,   rationale: "Ambulance purchase is capital formation; no HC capital code"}
 
   CTC:
-    "2210101": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Staff salaries -> governance/admin"}
-    "2210105": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Office supplies -> governance/admin"}
-    "2211001": {sha: HC.5.1, srhr: SRHR.NA,   rationale: "Essential medicines -> pharmaceuticals"}
+    "2210101": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Staff salaries: governance/admin"}
+    "2210105": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Office supplies: governance/admin"}
+    "2211001": {sha: HC.5.1, srhr: SRHR.NA,   rationale: "Essential medicines: pharmaceuticals"}
     "2211005": {sha: HC.5.1, srhr: SRHR.FP,   rationale: "Contraceptives"}
-    "2211010": {sha: HC.6.2, srhr: SRHR.NA,   rationale: "Vaccines/cold chain -> immunisation programmes"}
+    "2211010": {sha: HC.6.2, srhr: SRHR.NA,   rationale: "Vaccines/cold chain: immunisation programmes"}
     "2211015": {sha: HC.5.1, srhr: SRHR.HIV,  rationale: "HIV test kits and ARVs"}
-    "2211020": {sha: HC.5.1, srhr: SRHR.MH,   rationale: "Delivery/obstetric kits -> maternal health"}
-    "2211050": {sha: HC.4,   srhr: SRHR.NA,   rationale: "Lab reagents -> ancillary diagnostic"}
-    "2212010": {sha: HC.6.1, srhr: SRHR.AH,   rationale: "Youth SRH promotion -> IEC, adolescent"}
-    "2212015": {sha: HC.6.3, srhr: SRHR.RC,   rationale: "Cervical cancer screening -> early detection, repro. cancers"}
-    "2212020": {sha: HC.1.3, srhr: SRHR.SGBV, rationale: "GBV psycho-social support -> outpatient care, SGBV response"}
-    "2212030": {sha: HC.6.4, srhr: SRHR.MH,   rationale: "ANC outreach -> condition monitoring, maternal"}
-    "2213010": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Cleaning contracts -> facility operations"}
-    "2213020": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Fuel/transport -> governance/admin"}
+    "2211020": {sha: HC.5.1, srhr: SRHR.MH,   rationale: "Delivery/obstetric kits: maternal health"}
+    "2211050": {sha: HC.4,   srhr: SRHR.NA,   rationale: "Lab reagents: ancillary diagnostic"}
+    "2212010": {sha: HC.6.1, srhr: SRHR.AH,   rationale: "Youth SRH promotion: IEC, adolescent"}
+    "2212015": {sha: HC.6.3, srhr: SRHR.RC,   rationale: "Cervical cancer screening: early detection, repro. cancers"}
+    "2212020": {sha: HC.1.3, srhr: SRHR.SGBV, rationale: "GBV psycho-social support: outpatient care, SGBV response"}
+    "2212030": {sha: HC.6.4, srhr: SRHR.MH,   rationale: "ANC outreach: condition monitoring, maternal"}
+    "2213010": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Cleaning contracts: facility operations"}
+    "2213020": {sha: HC.7,   srhr: SRHR.NA,   rationale: "Fuel/transport: governance/admin"}
     "2214010": {sha: null,   srhr: SRHR.NA,   rationale: "Capital formation; no HC capital code in simplified reference"}
     "2214020": {sha: null,   srhr: SRHR.NA,   rationale: "Ambulance purchase is capital formation; no HC capital code"}
 

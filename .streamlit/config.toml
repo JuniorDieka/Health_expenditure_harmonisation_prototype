@@ -1,0 +1,9 @@
+# Streamlit theme aligned to WHO visual identity.
+# WHO brand blue #008DC9 (Pantone 299C), navy #0F2D5B, neutrals from the
+# WHO Data Design Language palette.
+[theme]
+primaryColor = "#008DC9"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#EFF6FB"
+textColor = "#1D1D1B"
+font = "sans serif"
