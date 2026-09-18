@@ -32,6 +32,16 @@ flowchart LR
 - `config/*.yaml`: all mapping logic lives outside the code so country
   teams can edit it.
 
+## What it looks like
+
+| Overview | Transactions |
+|---|---|
+| ![Overview](docs/screenshots/01_overview.png) | ![Transactions](docs/screenshots/02_transactions.png) |
+
+| Review queue | Data quality | Record detail |
+|---|---|---|
+| ![Review queue](docs/screenshots/03_review_queue.png) | ![Data quality](docs/screenshots/04_data_quality.png) | ![Record detail](docs/screenshots/05_record_detail.png) |
+
 ## Setup and run
 
 ```bash

@@ -4,3 +4,4 @@ duckdb>=1.0
 streamlit>=1.32
 PyYAML>=6.0
 pytest>=8.0
+playwright>=1.40  # only for docs/capture_screenshots.py

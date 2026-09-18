@@ -276,11 +276,13 @@ with tab_overview:
         chart = (alt.Chart(agg)
                  .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
                  .encode(
-                     x=alt.X("sha_code:N", title="SHA category", sort="-y"),
+                     x=alt.X("sha_code:N", title="SHA category", sort="-y",
+                             axis=alt.Axis(labelAngle=-45)),
                      y=alt.Y("share:Q", title="Share of countable expenditure",
                              axis=alt.Axis(format=".0%")),
                      color=alt.Color("country_code:N", title="Country",
                                      scale=alt.Scale(range=COUNTRY_COLORS)),
+                     xOffset="country_code:N",
                      tooltip=["country_code", "sha_code",
                               alt.Tooltip("share:Q", format=".1%"),
                               alt.Tooltip("amount:Q", format=",.0f")])
@@ -403,10 +405,10 @@ with tab_review:
     st.caption("Pick a record you have checked against the source, then mark it as reviewed. "
                "In production this would capture reviewer identity, comments and audit history.")
     options = queue["record_id"].tolist()
-    sel = st.selectbox(
-        "Record", options, index=None,
-        format_func=lambda rid: f"{queue.loc[queue['record_id'] == rid, 'country_code'].iloc[0]}  "
-                                f"{queue.loc[queue['record_id'] == rid, 'source_transaction_id'].iloc[0]}")
+    queue_labels = dict(zip(queue["record_id"],
+                            queue["country_code"] + "  " + queue["source_transaction_id"].astype(str)))
+    sel = st.selectbox("Record", options, index=None,
+                       format_func=lambda rid: queue_labels.get(rid, str(rid)))
     if sel and st.button("Mark as reviewed", type="primary"):
         mark_reviewed(sel)
         st.cache_data.clear()
@@ -452,11 +454,10 @@ with tab_detail:
                 unsafe_allow_html=True)
 
     ids = flt["record_id"].tolist()
-    pick = st.selectbox(
-        "Choose a harmonised record", ids, index=None,
-        format_func=lambda rid: "  ".join(
-            str(x) for x in flt.loc[flt["record_id"] == rid,
-            ["country_code", "source_transaction_id"]].iloc[0]))
+    rec_labels = dict(zip(flt["record_id"],
+                          flt["country_code"] + "  " + flt["source_transaction_id"].astype(str)))
+    pick = st.selectbox("Choose a harmonised record", ids, index=None,
+                        format_func=lambda rid: rec_labels.get(rid, str(rid)))
 
     if pick:
         rec = q("SELECT * FROM transactions WHERE record_id=?", [pick]).iloc[0]
