@@ -140,6 +140,15 @@ def ingest_country_a(path: Path, cfg: dict) -> IngestResult:
                 votes[rec.description] = votes.get(rec.description, 0) + 1
             res.records.append(rec)
 
+    # Ingestion controls: row count and duplicate source-id detection.
+    ids = [r.source_transaction_id for r in res.records if r.source_transaction_id]
+    dup_n = len(ids) - len(set(ids))
+    res.file_checks.append({"check": "source_row_count", "claimed": str(res.rows_read),
+                            "computed": str(len(res.records)),
+                            "status": "pass" if len(res.records) == res.rows_read else "fail"})
+    res.file_checks.append({"check": "duplicate_source_ids", "computed": str(dup_n),
+                            "status": "warning" if dup_n else "pass"})
+
     # No official CoA file for Country A: derive the canonical label per code
     # as the most frequent description casing observed.
     for code, votes in sorted(label_votes.items()):
@@ -251,6 +260,10 @@ def ingest_country_b(path: Path, cfg: dict) -> IngestResult:
 
     wb.close()
 
+    res.file_checks.append({"check": "source_row_count", "claimed": str(res.rows_read),
+                            "computed": str(len(res.records)),
+                            "status": "pass" if len(res.records) == res.rows_read else "fail"})
+
     # Reconcile the report's TOTAL footer against the parsed sum.
     if total_claimed is not None:
         ok = parsed_sum == total_claimed
@@ -339,6 +352,7 @@ def ingest_country_c(path: Path, cfg: dict) -> IngestResult:
                 "missing_supplier", "info", col["supplier"], None,
                 "supplier field empty", loc))
 
+    child_mismatches = 0
     for i, t in enumerate(txns):
         res.rows_read += 1
         loc = f"{path.name}:transactions[{i}]"
@@ -384,6 +398,17 @@ def ingest_country_c(path: Path, cfg: dict) -> IngestResult:
                     f"parent={rec.amount} children={child_sum}",
                     f"sub-transaction sum differs from parent by {rec.amount - child_sum}",
                     loc))
+                child_mismatches += 1
+
+    res.file_checks.append({
+        "check": "parent_child_reconciliation",
+        "computed": f"{child_mismatches} of {sum(1 for t in txns if t.get(col['children']))} "
+                    "parent groups differ by a rounding cent",
+        "status": "warning" if child_mismatches else "pass"})
+    parents_or_solo = sum(1 for r in res.records if r.record_role != "child")
+    res.file_checks.append({"check": "source_row_count", "claimed": str(res.rows_read),
+                            "computed": str(parents_or_solo),
+                            "status": "pass" if parents_or_solo == res.rows_read else "fail"})
 
     for code, votes in sorted(label_votes.items()):
         res.coa_entries.append({"country_code": "CTC", "account_code": code,

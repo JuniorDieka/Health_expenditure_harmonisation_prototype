@@ -3,9 +3,6 @@
 Read mostly UI over the harmonised DuckDB database: overview KPIs,
 data quality summary, filterable transaction table, classification
 review queue, and per record source lineage.
-
-Visual identity follows WHO branding: primary blue #008DC9 (Pantone 299C),
-navy #0F2D5B, light blue #90D3FB, accent orange #F39313.
 """
 
 from __future__ import annotations
@@ -27,8 +24,10 @@ WHO_LIGHT = "#90D3FB"
 WHO_PALE = "#EFF6FB"
 WHO_GREY = "#DADADA"
 WHO_ORANGE = "#F39313"
-WHO_TEXT = "#1D1D1B"
 SEV_COLORS = {"error": "#C0392B", "warning": "#E67E22", "info": "#008DC9"}
+COUNTRY_COLORS = [WHO_BLUE, WHO_NAVY, WHO_ORANGE]
+COUNTRY_NAMES = {"CTA": "Country A", "CTB": "Country B", "CTC": "Country C"}
+COUNTRY_CCY = {"CTA": "KES", "CTB": "XOF", "CTC": "RWF + USD"}
 
 st.set_page_config(
     page_title="Health Expenditure Harmonisation",
@@ -70,11 +69,6 @@ st.markdown(f"""
         margin-top: 2.2rem; padding: 1rem 0 0.4rem 0;
         border-top: 3px solid {WHO_BLUE}; color: #5A6B7A; font-size: 0.82rem;
     }}
-    div[data-testid="stMetric"] {{
-        background: #FFFFFF; border: 1px solid {WHO_GREY};
-        border-top: 4px solid {WHO_BLUE}; border-radius: 10px; padding: 0.7rem 1rem;
-    }}
-    div[data-testid="stMetric"] label {{ color: #5A6B7A !important; }}
     section[data-testid="stSidebar"] {{ background: {WHO_PALE}; }}
 </style>
 """, unsafe_allow_html=True)
@@ -117,12 +111,19 @@ VIEW_SQL = """
     LEFT JOIN classifications c USING (record_id)
 """
 
+METHOD_NAMES = {"coa_map": "CoA mapping", "keyword": "Keyword rule",
+                "unresolved": "Unresolved"}
+STATUS_NAMES = {"auto_classified": "Auto classified",
+                "needs_review": "Needs review", "reviewed": "Reviewed"}
+ROLE_NAMES = {"standalone": "Standalone", "parent": "Parent",
+              "child": "Child (split, not counted)"}
+
 # ------------------------------------------------------------------ header
 
 st.markdown("""
 <div class="who-banner">
     <h1>Health Expenditure Harmonisation</h1>
-    <p>Country spending data, cleaned, unified and classified so it can be compared and reviewed.</p>
+    <p>Country expenditure data harmonised, classified and made traceable for consistent analysis and review.</p>
     <span class="who-tag">PROTOTYPE · SYNTHETIC ASSESSMENT DATA</span>
 </div>
 """, unsafe_allow_html=True)
@@ -133,18 +134,22 @@ if not Path(DB_PATH).exists():
 
 with st.expander("New to this tool? Read this first"):
     st.markdown("""
-**What this tool does.** Three countries send their health spending data in different
-formats (a spreadsheet export, a finance system report and a JSON extract). This tool
-reads all of them, puts every transaction into one common structure, assigns each
-record a health category, and flags anything that looks wrong or needs a human decision.
-
-**Key terms used on this page**
-- **SHA code**: System of Health Accounts category. It answers *what kind of health service or good was purchased* (for example immunisation, laboratory services, administration).
-- **SRHR tag**: marks spending related to Sexual and Reproductive Health and Rights (for example family planning, maternal health, HIV).
-- **Review queue**: records the system could not classify with confidence, or that carry data quality warnings. Nothing is hidden; these wait for an analyst.
-- **Data quality issue**: a note attached to a record, such as a missing amount, a negative value, or suspicious text in the description.
-- **Child records**: some Country C transactions are split into sub amounts. Only the parent counts in totals so nothing is counted twice.
-- **Lineage**: every record keeps a link back to its exact source file and row, plus the original untouched text.
+- **Purpose.** Demonstrates harmonisation and classification of heterogeneous
+  country expenditure extracts from three different financial systems.
+- **Source vs analytical rows.** 7,000 source transactions produce 7,183
+  analytical rows because Country C contains nested child splits.
+- **Totals.** Child rows are retained for traceability but excluded from
+  totals, so amounts are never counted twice.
+- **Currency.** Amounts remain in their source currency. Cross country
+  monetary totals are not compared because no exchange rate reference was
+  supplied.
+- **Classification.** Trusted account mappings take precedence over
+  sanitised keyword rules; uncertain or suspicious records enter analyst
+  review instead of being forced into a category.
+- **Review queue.** 816 records require analyst review. Most lack
+  sufficiently reliable evidence for a SHA health category; four records
+  contain instruction-like text and are escalated even though the trusted
+  account mappings remain authoritative.
 """)
 
 # ------------------------------------------------------------------ sidebar
@@ -153,7 +158,6 @@ st.sidebar.markdown("## Filter the records")
 st.sidebar.caption("Every table and chart below respects these filters.")
 
 countries = sorted(q("SELECT DISTINCT country_code FROM transactions")["country_code"])
-COUNTRY_NAMES = {"CTA": "Country A (KES)", "CTB": "Country B (XOF)", "CTC": "Country C (RWF)"}
 f_country = st.sidebar.multiselect(
     "Country", countries, default=countries,
     format_func=lambda c: COUNTRY_NAMES.get(c, c))
@@ -166,28 +170,33 @@ def _opts(col: str) -> list:
 
 
 f_ministry = st.sidebar.multiselect("Ministry", _opts("ministry_code"))
+f_currency = st.sidebar.multiselect("Currency", _opts("currency"))
 f_account = st.sidebar.multiselect("Account code", _opts("account_code"))
 f_sha = st.sidebar.multiselect("SHA health category", _opts("sha_code"))
 f_srhr = st.sidebar.multiselect("SRHR tag", _opts("srhr_code"))
+f_method = st.sidebar.multiselect(
+    "Classification method", _opts("sha_method"),
+    format_func=lambda m: METHOD_NAMES.get(m, m))
 f_review = st.sidebar.multiselect(
     "Review status", _opts("review_status"),
-    format_func=lambda s: {"auto_classified": "Auto classified",
-                           "needs_review": "Needs review",
-                           "reviewed": "Reviewed"}.get(s, s))
+    format_func=lambda s: STATUS_NAMES.get(s, s))
 f_role = st.sidebar.multiselect(
     "Record role", _opts("record_role"), default=["standalone", "parent"],
-    format_func=lambda s: {"standalone": "Standalone", "parent": "Parent",
-                           "child": "Child (split, not counted)"}.get(s, s))
+    format_func=lambda s: ROLE_NAMES.get(s, s))
 
 flt = base.copy()
 if f_ministry:
     flt = flt[flt["ministry_code"].isin(f_ministry)]
+if f_currency:
+    flt = flt[flt["currency"].isin(f_currency)]
 if f_account:
     flt = flt[flt["account_code"].isin(f_account)]
 if f_sha:
     flt = flt[flt["sha_code"].isin(f_sha)]
 if f_srhr:
     flt = flt[flt["srhr_code"].isin(f_srhr)]
+if f_method:
+    flt = flt[flt["sha_method"].isin(f_method)]
 if f_review:
     flt = flt[flt["review_status"].isin(f_review)]
 if f_role:
@@ -202,82 +211,124 @@ tab_overview, tab_tx, tab_review, tab_dq, tab_detail = st.tabs([
 # ============================================================= OVERVIEW
 with tab_overview:
     src_rows = int(q("SELECT SUM(rows_read) n FROM source_file")["n"][0])
-    n_sha = int(base["sha_code"].notna().sum())
-    n_srhr = int(base["srhr_code"].notna().sum())
-    n_review = int((base["review_status"] == "needs_review").sum())
-    n_dq = int(q("SELECT COUNT(*) n FROM dq_issues")["n"][0])
+    n_records = len(base)
     n_children = int((base["record_role"] == "child").sum())
+    n_sha = int(base["sha_code"].notna().sum())
+    sha_pct = f"{100 * n_sha / n_records:.1f}%" if n_records else "0%"
+    n_srhr_rel = int((base["srhr_code"].notna() & (base["srhr_code"] != "SRHR.NA")).sum())
+    n_review = int((base["review_status"] == "needs_review").sum())
+    n_reviewed = int((base["review_status"] == "reviewed").sum())
+    dq_all = q("SELECT severity, COUNT(*) n, COUNT(DISTINCT record_id) recs "
+               "FROM dq_issues GROUP BY 1")
+    n_dq = int(dq_all["n"].sum())
+    n_dq_recs = int(dq_all["recs"].sum())
+    sev_counts = dict(zip(dq_all["severity"], dq_all["n"]))
+    sev_note = " · ".join(f"{sev_counts.get(s, 0)} {s}" for s in ("error", "warning", "info"))
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        kpi("Countries", len(countries), "reporting in this batch")
+        kpi("Countries", len(countries), "source systems")
     with c2:
-        kpi("Source records", f"{src_rows:,}", "rows read from raw files")
+        kpi("Source transactions", f"{src_rows:,}", "read from supplied files")
     with c3:
-        kpi("Harmonised records", f"{len(base):,}", f"incl. {n_children} child splits")
+        kpi("Analytical rows", f"{n_records:,}", f"incl. {n_children} child rows")
     with c4:
-        kpi("Classified", f"{n_sha:,} / {n_srhr:,}", "SHA / SRHR assigned")
+        kpi("SHA classified", f"{n_sha:,} / {n_records:,}", f"{sha_pct} classified")
 
-    c5, c6, c7 = st.columns(3)
+    c5, c6, c7, c8 = st.columns(4)
     with c5:
-        kpi("Needs review", f"{n_review:,}", "waiting for an analyst")
+        kpi("Needs review", f"{n_review:,}", "uncertain or flagged")
     with c6:
-        kpi("Data quality notes", f"{n_dq:,}", "issues attached to records")
+        kpi("Quality flags", f"{n_dq:,}", f"{sev_note}; on {n_dq_recs:,} records")
     with c7:
-        kpi("Reviewed", int((base['review_status'] == 'reviewed').sum()), "confirmed by analysts")
+        kpi("SRHR relevant", f"{n_srhr_rel:,}", "excluding not applicable")
+    with c8:
+        kpi("Reviewed", f"{n_reviewed:,}", "analyst confirmed")
 
     st.write("")
-    st.subheader("Where the money goes")
-    st.markdown('<p class="section-note">Total spending per health category, per country. '
-                'Only countable records are summed, so split amounts are never counted twice.</p>',
-                unsafe_allow_html=True)
-    agg = (flt[flt["include_in_totals"]]
-           .groupby(["country_code", "sha_code"], dropna=False)["amount"].sum()
-           .reset_index())
-    agg["sha_code"] = agg["sha_code"].fillna("unclassified")
-    chart = (alt.Chart(agg)
-             .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
-             .encode(
-                 x=alt.X("sha_code:N", title="SHA category", sort="-y"),
-                 y=alt.Y("amount:Q", title="Total amount (local currency)"),
-                 color=alt.Color("country_code:N", title="Country",
-                                 scale=alt.Scale(range=[WHO_BLUE, WHO_NAVY, WHO_ORANGE])),
-                 tooltip=["country_code", "sha_code", alt.Tooltip("amount:Q", format=",.0f")])
-             .properties(height=320))
-    st.altair_chart(chart, width='stretch')
+
+    # --- expenditure mix: shares when comparing countries, absolute for one
+    countable = flt[flt["include_in_totals"]].copy()
+    if len(f_country) == 1:
+        ccy = COUNTRY_CCY.get(f_country[0], "")
+        st.subheader(f"Spending by SHA category ({COUNTRY_NAMES.get(f_country[0], f_country[0])}, {ccy})")
+        agg = (countable.groupby("sha_code", dropna=False)["amount"].sum()
+               .reset_index().sort_values("amount", ascending=False))
+        agg["sha_code"] = agg["sha_code"].fillna("unclassified")
+        chart = (alt.Chart(agg)
+                 .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4, color=WHO_BLUE)
+                 .encode(x=alt.X("sha_code:N", title="SHA category", sort="-y"),
+                         y=alt.Y("amount:Q", title=f"Total amount ({ccy})"),
+                         tooltip=["sha_code", alt.Tooltip("amount:Q", format=",.0f")])
+                 .properties(height=320))
+        st.altair_chart(chart, width="stretch")
+    else:
+        st.subheader("Spending composition by SHA category")
+        st.markdown(
+            '<p class="section-note">Share of each country\'s countable expenditure. '
+            'Using percentages allows legitimate comparison across countries whose '
+            'currencies differ.</p>', unsafe_allow_html=True)
+        agg = (countable.groupby(["country_code", "sha_code"], dropna=False)["amount"]
+               .sum().reset_index())
+        totals = agg.groupby("country_code")["amount"].transform("sum")
+        agg["share"] = agg["amount"] / totals
+        agg["sha_code"] = agg["sha_code"].fillna("unclassified")
+        chart = (alt.Chart(agg)
+                 .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
+                 .encode(
+                     x=alt.X("sha_code:N", title="SHA category", sort="-y"),
+                     y=alt.Y("share:Q", title="Share of countable expenditure",
+                             axis=alt.Axis(format=".0%")),
+                     color=alt.Color("country_code:N", title="Country",
+                                     scale=alt.Scale(range=COUNTRY_COLORS)),
+                     tooltip=["country_code", "sha_code",
+                              alt.Tooltip("share:Q", format=".1%"),
+                              alt.Tooltip("amount:Q", format=",.0f")])
+                 .properties(height=320))
+        st.altair_chart(chart, width="stretch")
+    st.caption("Amounts remain in source currency. Cross country monetary totals are "
+               "not aggregated because no FX reference was supplied.")
 
     left, right = st.columns(2)
     with left:
         st.subheader("Review queue by country")
         rq = (flt[flt["review_status"] == "needs_review"]
               .groupby("country_code").size().reset_index(name="records"))
-        ch = (alt.Chart(rq).mark_arc(innerRadius=55)
-              .encode(theta="records:Q",
-                      color=alt.Color("country_code:N", title="Country",
-                                      scale=alt.Scale(range=[WHO_BLUE, WHO_NAVY, WHO_ORANGE])),
+        ch = (alt.Chart(rq)
+              .mark_bar(cornerRadiusTopRight=4, cornerRadiusBottomRight=4)
+              .encode(y=alt.Y("country_code:N", title="Country", sort="-x"),
+                      x=alt.X("records:Q", title="Records needing review"),
+                      color=alt.Color("country_code:N", legend=None,
+                                      scale=alt.Scale(range=COUNTRY_COLORS)),
                       tooltip=["country_code", "records"]))
-        st.altair_chart(ch, width='stretch')
+        st.altair_chart(ch, width="stretch")
     with right:
-        st.subheader("Data quality issues by severity")
-        dq_sev = (q("SELECT country_code, severity, COUNT(*) n FROM dq_issues "
-                    "GROUP BY 1,2"))
+        st.subheader("Quality flags by severity")
+        dq_sev = q("SELECT country_code, severity, COUNT(*) n FROM dq_issues GROUP BY 1,2")
         ch2 = (alt.Chart(dq_sev).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
                .encode(x=alt.X("country_code:N", title="Country"),
-                       y=alt.Y("n:Q", title="Issues"),
+                       y=alt.Y("n:Q", title="Flags"),
                        color=alt.Color("severity:N", title="Severity",
                                        scale=alt.Scale(domain=list(SEV_COLORS),
                                                        range=list(SEV_COLORS.values()))),
                        tooltip=["country_code", "severity", "n"]))
-        st.altair_chart(ch2, width='stretch')
+        st.altair_chart(ch2, width="stretch")
 
     st.subheader("Source files and checks")
     st.markdown('<p class="section-note">Every input file, how many rows were read, '
-                'and the built in reconciliation checks that ran during loading.</p>',
+                'and the ingestion controls that ran during loading.</p>',
                 unsafe_allow_html=True)
-    sf = q("SELECT country_code, file_name, format, rows_read, rows_loaded, file_checks FROM source_file")
+    sf = q("SELECT country_code, file_name, format, rows_read, harmonised_rows, file_checks "
+           "FROM source_file")
     sf["file_checks"] = sf["file_checks"].apply(
-        lambda s: "; ".join(f"{c['check']}: {c['status']}" for c in json.loads(s)) if s else "")
-    st.dataframe(sf, width='stretch', hide_index=True)
+        lambda s: "; ".join(
+            f"{c['check']}: {c['status']}" + (f" ({c['computed']})" if c.get("computed") and c["status"] != "pass" or c["check"] == "parent_child_reconciliation" else "")
+            for c in json.loads(s)) if s else "")
+    sf = sf.rename(columns={
+        "country_code": "country", "file_name": "source file",
+        "rows_read": "source rows", "harmonised_rows": "analytical rows",
+        "file_checks": "ingestion controls"})
+    st.dataframe(sf, width="stretch", hide_index=True)
 
 # ============================================================= TRANSACTIONS
 with tab_tx:
@@ -297,7 +348,7 @@ with tab_tx:
             "supplier", "amount", "currency", "record_role",
             "sha_code", "srhr_code", "review_status"]
     st.dataframe(
-        view[cols], width='stretch', hide_index=True,
+        view[cols], width="stretch", hide_index=True,
         column_config={
             "amount": st.column_config.NumberColumn(format="%,.2f"),
             "transaction_date": st.column_config.DateColumn(format="YYYY-MM-DD"),
@@ -305,36 +356,52 @@ with tab_tx:
 
 # ============================================================= REVIEW QUEUE
 with tab_review:
-    queue = flt[flt["review_status"] == "needs_review"]
+    queue = flt[flt["review_status"] == "needs_review"].copy()
+    n_adv = int(queue["rationale"].fillna("").str.contains("adversarial").sum())
     st.subheader(f"{len(queue):,} records need an analyst")
     st.markdown(
-        '<p class="section-note">These records were not classified automatically, or carry a '
-        'warning such as mismatched or suspicious description text. Each row shows the method '
-        'that tried, its confidence, and the reason.</p>', unsafe_allow_html=True)
+        f'<p class="section-note">{len(queue):,} records require review. Most lack sufficiently '
+        f'reliable evidence for a SHA category; {n_adv} contain instruction-like text and are '
+        'escalated even though the trusted account mappings remain authoritative.</p>',
+        unsafe_allow_html=True)
+
+    def _review_reason(row):
+        rat = row.get("rationale") or ""
+        if "adversarial" in rat:
+            return "Instruction-like text in description (escalated)"
+        if pd.isna(row["sha_code"]) and pd.isna(row["srhr_code"]):
+            return "No reliable SHA or SRHR mapping"
+        if pd.isna(row["sha_code"]):
+            return "No reliable SHA mapping"
+        if pd.isna(row["srhr_code"]):
+            return "No reliable SRHR mapping"
+        return "Flagged data quality issue"
+
+    queue["review_reason"] = queue.apply(_review_reason, axis=1)
 
     def _row_color(row):
-        if row["sha_code"] is None or pd.isna(row["sha_code"]):
+        if pd.isna(row["sha_code"]):
             return ["background-color: #FDF1E7"] * len(row)
         return [""] * len(row)
 
     shown = queue[["country_code", "source_transaction_id", "account_code", "account_label",
                    "description", "amount", "currency", "sha_code", "srhr_code",
-                   "sha_method", "sha_confidence", "srhr_confidence", "rationale"]]
+                   "sha_method", "sha_confidence", "review_reason", "rationale"]]
     st.dataframe(
         shown.style.apply(_row_color, axis=1),
-        width='stretch', hide_index=True,
+        width="stretch", hide_index=True,
         column_config={
             "sha_confidence": st.column_config.ProgressColumn(
                 "SHA confidence", min_value=0, max_value=1, format="%.2f"),
-            "srhr_confidence": st.column_config.ProgressColumn(
-                "SRHR confidence", min_value=0, max_value=1, format="%.2f"),
             "amount": st.column_config.NumberColumn(format="%,.2f"),
+            "sha_method": st.column_config.TextColumn("SHA method"),
         })
     st.caption("Rows highlighted in orange have no SHA category assigned yet.")
 
     st.divider()
     st.markdown("**Resolve a record**")
-    st.caption("Pick a record you have checked against the source, then mark it as reviewed.")
+    st.caption("Pick a record you have checked against the source, then mark it as reviewed. "
+               "In production this would capture reviewer identity, comments and audit history.")
     options = queue["record_id"].tolist()
     sel = st.selectbox(
         "Record", options, index=None,
@@ -348,31 +415,34 @@ with tab_review:
 
 # ============================================================= DATA QUALITY
 with tab_dq:
-    st.subheader("Data quality summary")
+    st.subheader("Data quality flags")
     st.markdown('<p class="section-note">Problems found while reading and checking the source '
-                'files. Records are never silently corrected or dropped; issues are attached '
+                'files. Records are never silently corrected or dropped; flags are attached '
                 'to the record instead.</p>', unsafe_allow_html=True)
 
     dq = q("SELECT * FROM dq_issues WHERE country_code IN (SELECT UNNEST($1))", [f_country])
     sev_counts = dq.groupby("severity").size().to_dict()
+    affected = dq["record_id"].dropna().nunique()
     pills = " ".join(
         f'<span class="pill" style="background:{SEV_COLORS[s]}1A;color:{SEV_COLORS[s]};'
         f'border:1px solid {SEV_COLORS[s]}">{s}: {sev_counts.get(s, 0)}</span>'
         for s in ("error", "warning", "info"))
     st.markdown(pills, unsafe_allow_html=True)
+    st.caption(f"{len(dq):,} flags attached to {affected:,} distinct records "
+               "(a record can carry several flags).")
     st.write("")
 
-    st.markdown("**Issues by country and type**")
+    st.markdown("**Flags by country and type**")
     summ = (dq.groupby(["country_code", "issue_type", "severity"]).size()
             .reset_index(name="count")
             .sort_values(["country_code", "count"], ascending=[True, False]))
-    st.dataframe(summ, width='stretch', hide_index=True)
+    st.dataframe(summ, width="stretch", hide_index=True)
 
-    with st.expander("Show every issue record"):
+    with st.expander("Show every flag"):
         st.dataframe(
             dq[["country_code", "issue_type", "severity", "field_name",
                 "observed_value", "detail", "status"]],
-            width='stretch', hide_index=True)
+            width="stretch", hide_index=True)
 
 # ============================================================= RECORD DETAIL
 with tab_detail:
@@ -409,13 +479,13 @@ with tab_detail:
             st.json(cls.to_dict(orient="records"))
             st.markdown("#### Quality flags on this record")
             if iss.empty:
-                st.success("No issues flagged on this record.")
+                st.success("No flags on this record.")
             else:
-                st.dataframe(iss, width='stretch', hide_index=True)
+                st.dataframe(iss, width="stretch", hide_index=True)
             if not kids.empty:
                 st.markdown("#### Splits of this transaction")
                 st.caption("Child amounts are informational only and are excluded from totals.")
-                st.dataframe(kids, width='stretch', hide_index=True)
+                st.dataframe(kids, width="stretch", hide_index=True)
 
         st.markdown("#### Where did it come from?")
         st.caption("Full lineage, so every figure can be traced back to its source document.")
@@ -432,7 +502,7 @@ with tab_detail:
 
 st.markdown(f"""
 <div class="who-footer">
-    <strong>Health Expenditure Harmonisation Prototype</strong> · built for a technical
+    <strong>Health Expenditure Harmonisation Prototype</strong> · technical
     assessment · all data is synthetic
 </div>
 """, unsafe_allow_html=True)

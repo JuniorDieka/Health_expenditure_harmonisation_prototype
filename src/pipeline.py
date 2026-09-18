@@ -55,7 +55,7 @@ def run(config_path: Path = Path("config/countries.yaml"),
         source_files.append({
             "batch_id": batch_id, "country_code": country_code,
             "file_name": res.file_name, "format": ccfg["format"],
-            "rows_read": res.rows_read, "rows_loaded": len(res.records),
+            "rows_read": res.rows_read, "harmonised_rows": len(res.records),
             "file_checks": json.dumps(res.file_checks),
         })
         print(f"[{country_code}] {res.file_name}: {res.rows_read} source rows, "

@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS source_file (
     file_name       VARCHAR,
     format          VARCHAR,
     rows_read       INTEGER,
-    rows_loaded     INTEGER,
+    harmonised_rows INTEGER,
     file_checks     VARCHAR   -- JSON: reconciliation results
 );
 
