@@ -1,0 +1,67 @@
+# Country ingestion adapter configuration.
+# Each entry tells the pipeline where the raw extract lives and how to
+# interpret its layout. Country teams can add a new country by adding an
+# entry here plus an adapter in src/ingest.py.
+data_dir: Data
+raw_dir: Data/raw
+ref_dir: Data/reference
+db_path: output/harmonised.duckdb
+
+countries:
+  CTA:
+    file: country_a_expenditure.csv
+    format: csv
+    fiscal_year_start_month: 7        # July-June fiscal year
+    primary_currency: KES
+    date_format: "%d/%m/%Y"
+    columns:
+      txn_id: TXN_ID
+      date: DATE
+      ministry_code: MINISTRY_CODE
+      ministry_name: MINISTRY_NAME
+      account_code: ACCOUNT_CODE
+      description: DESCRIPTION
+      supplier: VENDOR
+      amount: AMOUNT_KES
+      currency: null                  # single currency, implied KES
+
+  CTB:
+    file: country_b_depenses.xlsx
+    format: xlsx
+    fiscal_year_start_month: 10       # October-September fiscal year
+    primary_currency: XOF
+    date_format: "%d-%m-%Y"
+    sheet: Depenses
+    coa_sheet: Plan_comptable
+    header_row: 7                     # 1-based row of column headers
+    total_marker: TOTAL               # footer id value; validated, not stored
+    columns:
+      txn_id: id_transaction
+      date: date_ecriture
+      ministry_code: ministere_code
+      ministry_name: ministere_nom
+      account_code: code_budgetaire
+      description: libelle
+      supplier: tiers
+      amount: montant_XOF
+      currency: null
+
+  CTC:
+    file: country_c_expenditure.json
+    format: json
+    fiscal_year_start_month: 7
+    primary_currency: RWF
+    date_format: "%Y-%m-%d"
+    records_path: transactions
+    columns:
+      txn_id: transactionId
+      date: postingDate
+      fiscal_year: fiscalYear
+      ministry_code: ministryCode
+      ministry_name: ministryName
+      account_code: coaCode
+      description: description
+      supplier: supplier
+      amount: amount
+      currency: currency
+      children: subTransactions
