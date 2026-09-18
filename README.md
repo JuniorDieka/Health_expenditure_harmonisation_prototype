@@ -1,10 +1,9 @@
 # Health Expenditure Harmonisation Prototype
 
-Ingests heterogeneous country expenditure extracts (CSV, Excel, JSON),
-harmonises them into one auditable canonical model in DuckDB, classifies
-each record against SHA and SRHR reference codes, surfaces data quality
-issues, and gives analysts a Streamlit review interface with full source
-lineage.
+Ingests three heterogeneous country expenditure extracts (CSV, Excel,
+JSON) into one auditable DuckDB model, classifies each record against
+SHA and SRHR reference codes, surfaces data quality issues, and gives
+analysts a Streamlit review interface with full source lineage.
 
 ## Architecture
 
